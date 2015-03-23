@@ -26,16 +26,6 @@
     {:in stream-in-ch
      :out stream-out-ch}))
 
-(defn send-byte-array [^bytes b-a]
-  (let [stream-out-ch (:out @client)]
-    (if stream-out-ch
-      (>!! stream-out-ch b-a)
-      false)))
-
-(defn receive-byte-array []
-  (let [stream-in-ch (:in @client)]
-    (<!! stream-in-ch)))
-
 
 (def pending-requests (atom {}))
 
@@ -92,11 +82,6 @@
 
 (defn dispatch-to-type [value]
   (util/serialize value))
-
-(defn tcp-request-responce [{:keys [^bytes b-a request-uuid]}]
-  (send-byte-array b-a)
-  (let [responce (receive-byte-array)]
-    (clojure.walk/keywordize-keys (cheshire/decode (String. (byte-array responce))))))
 
 (def callback-count (atom 0))
 
@@ -172,7 +157,10 @@
 
 (defn io-assoc
   ([^String entity-id key value]
-   (tcp-request-responce (io-assoc-base entity-id key value)))
+   (let [callback (chan 1)
+         {:keys [b-a request-uuid]} (io-assoc-base entity-id key value)]
+     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (<!! callback)))
   ([^String entity-id key value callback]
    (let [{:keys [b-a request-uuid]} (io-assoc-base entity-id key value)]
      (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
@@ -180,28 +168,42 @@
 
 (defn io-dissoc
   ([^String entity-id key]
-    (tcp-request-responce (io-dissoc-base entity-id key)))
+   (let [callback (chan 1)
+         {:keys [b-a request-uuid]} (io-dissoc-base entity-id key)]
+     (>!! tcp-responce-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (<!! callback)))
   ([^String entity-id key callback]
    (let [{:keys [b-a request-uuid]} (io-dissoc-base entity-id key)]
      (>!! tcp-responce-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
 (defn io-get-key-as-of
   ([^String entity-id key timestamp]
-   (tcp-request-responce (io-get-key-as-of-base entity-id key timestamp)))
+   (let [callback (chan 1)
+         {:keys [b-a request-uuid]} (io-get-key-as-of-base entity-id key timestamp)]
+     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (<!! callback)))
   ([^String entity-id key timestamp callback]
    (let [{:keys [b-a request-uuid]} (io-get-key-as-of-base entity-id key timestamp)]
      (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
 (defn io-get-entity-as-of
   ([^String entity-id timestamp]
-    (tcp-request-responce (io-get-entity-as-of-base entity-id timestamp)))
+   (let [callback (chan 1)
+         {:keys [b-a request-uuid]} (io-get-entity-as-of-base entity-id timestamp)]
+     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (<!! callback)))
   ([^String entity-id timestamp callback]
    (let [{:keys [b-a request-uuid]} (io-get-entity-as-of-base entity-id timestamp)]
      (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
 (defn io-get-all-versions-between
   ([^String entity-id timestamp-start timestamp-end limit]
-    (tcp-request-responce (io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)))
+   (let [callback (chan 1)
+         {:keys [b-a request-uuid]} (io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)]
+     (>!! tcp-request-ch {:b-a      b-a
+                          :request-uuid request-uuid
+                          :callback callback})
+     (<!! callback)))
   ([^String entity-id timestamp-start timestamp-end limit callback]
    (let [{:keys [b-a request-uuid]} (io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)]
      (>!! tcp-request-ch {:b-a      b-a
