@@ -5,10 +5,7 @@
             [gloss.core :as gloss]
             [clojure.core.async :refer [<!! >!! go <! >! alts! chan thread timeout pipe close!]]
             [clojure.core.async.impl.protocols :refer [closed?]]
-            [gloss.io :as io]
-            [cheshire.core :as cheshire]
-            [neversleep-clojure-client.util :as util]))
-
+            [gloss.io :as io]))
 
 
 (def protocol-client
