@@ -11,10 +11,11 @@
            (clojure.core.async.impl.channels MMC))
   (:gen-class))
 
-(defn -main
-  [& args])
-
 (def ^:const api-version 1)
+
+(def ^:const latest-server-timestamp "___________________")
+
+(def ^:const end-of-times "0000000000000000000")
 
 (def client (atom nil))
 
@@ -26,10 +27,9 @@
     {:in stream-in-ch
      :out stream-out-ch}))
 
-
 (def pending-requests (atom {}))
 
-(def tcp-responce-ch (chan 1000))
+(def tcp-responce-ch (atom (chan 1000)))
 
 (defn dispatch-to-callback [callback data]
   (cond (instance? MMC callback)
@@ -40,7 +40,7 @@
 
 (defn start-tcp-responce-async-loop [client]
   (go (loop []
-        (let [callback (<! tcp-responce-ch)
+        (let [callback (<! @tcp-responce-ch)
               stream-in-ch (:in @client)]
           (if-not (nil? stream-in-ch)
             (let [responce (<! stream-in-ch)
@@ -53,11 +53,11 @@
             (dispatch-to-callback callback {:error ":in socket channel closed, no data received"}))
           (recur)))))
 
-(def tcp-request-ch (chan 1000))
+(def tcp-request-ch (atom (chan 1000)))
 
 (defn start-tcp-request-async-loop [client]
   (go (loop []
-        (let [{:keys [callback b-a request-uuid]} (<! tcp-request-ch)
+        (let [{:keys [callback b-a request-uuid]} (<! @tcp-request-ch)
               request-uuid (keyword request-uuid)
               stream-out-ch (:out @client)
               send-result (if stream-out-ch
@@ -67,7 +67,7 @@
           (swap! pending-requests assoc request-uuid callback)
           (if send-result
             ;schedule a "take" from the socket
-            (>! tcp-responce-ch callback)
+            (>! @tcp-responce-ch callback)
             (dispatch-to-callback callback {:error ":out socket channel closed, no data sent"}))
           (recur)))))
 
@@ -75,6 +75,8 @@
 (defn init
   "Initiates a tcp socket connection to the server"
   [host port]
+  (reset! tcp-request-ch (chan 1000))
+  (reset! tcp-responce-ch (chan 1000))
   (reset! client (connect-stream-to-core-async-channels
                    @(aleph-netty/connect-client host port)))
   (start-tcp-request-async-loop client)
@@ -86,7 +88,7 @@
 (def callback-count (atom 0))
 
 (defn callback-test [responce-data]
-  ;(println "callback-test responce-data:" responce-data)
+  (println "callback-test responce-data:" responce-data)
   (swap! callback-count + 1))
 
 
@@ -152,72 +154,73 @@
     {:b-a (byte-array (concat header-bytes entity-id-length entity-id-bytes timestamp-start timestamp-end limit))
      :request-uuid request-uuid}))
 
-;PUBLIC API
 
+
+;PUBLIC API
 
 (defn io-assoc
   ([^String entity-id key value]
    (let [callback (chan 1)
          {:keys [b-a request-uuid]} (io-assoc-base entity-id key value)]
-     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
      (<!! callback)))
   ([^String entity-id key value callback]
    (let [{:keys [b-a request-uuid]} (io-assoc-base entity-id key value)]
-     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
 
 (defn io-dissoc
   ([^String entity-id key]
    (let [callback (chan 1)
          {:keys [b-a request-uuid]} (io-dissoc-base entity-id key)]
-     (>!! tcp-responce-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
      (<!! callback)))
   ([^String entity-id key callback]
    (let [{:keys [b-a request-uuid]} (io-dissoc-base entity-id key)]
-     (>!! tcp-responce-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
 (defn io-get-key-as-of
   ([^String entity-id key timestamp]
    (let [callback (chan 1)
          {:keys [b-a request-uuid]} (io-get-key-as-of-base entity-id key timestamp)]
-     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
      (<!! callback)))
   ([^String entity-id key timestamp callback]
    (let [{:keys [b-a request-uuid]} (io-get-key-as-of-base entity-id key timestamp)]
-     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
 (defn io-get-entity-as-of
   ([^String entity-id timestamp]
    (let [callback (chan 1)
          {:keys [b-a request-uuid]} (io-get-entity-as-of-base entity-id timestamp)]
-     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
      (<!! callback)))
   ([^String entity-id timestamp callback]
    (let [{:keys [b-a request-uuid]} (io-get-entity-as-of-base entity-id timestamp)]
-     (>!! tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
 (defn io-get-all-versions-between
   ([^String entity-id timestamp-start timestamp-end limit]
    (let [callback (chan 1)
          {:keys [b-a request-uuid]} (io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)]
-     (>!! tcp-request-ch {:b-a      b-a
+     (>!! @tcp-request-ch {:b-a      b-a
                           :request-uuid request-uuid
                           :callback callback})
      (<!! callback)))
   ([^String entity-id timestamp-start timestamp-end limit callback]
    (let [{:keys [b-a request-uuid]} (io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)]
-     (>!! tcp-request-ch {:b-a      b-a
+     (>!! @tcp-request-ch {:b-a      b-a
                           :request-uuid request-uuid
                           :callback callback}))))
 
 (defn io-get-entity
   ([entity-id]
-   (io-get-entity-as-of entity-id "___________________"))
+   (io-get-entity-as-of entity-id latest-server-timestamp))
   ([entity-id callback]
-   (io-get-entity-as-of entity-id "___________________" callback)))
+   (io-get-entity-as-of entity-id latest-server-timestamp callback)))
 
 (defn io-get-key
   ([entity-id key]
-   (io-get-key-as-of entity-id key "___________________"))
+   (io-get-key-as-of entity-id key latest-server-timestamp))
   ([entity-id key callback]
-    (io-get-key-as-of entity-id key "___________________" callback)))
+    (io-get-key-as-of entity-id key latest-server-timestamp callback)))

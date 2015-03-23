@@ -25,7 +25,6 @@
       out
       (io/decode-stream s protocol))))
 
-
 (defn connect-client
   [host port]
   (d/chain (tcp/client {:host host, :port port})
