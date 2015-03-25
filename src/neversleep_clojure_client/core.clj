@@ -32,11 +32,12 @@
 (def tcp-responce-ch (atom (chan 1000)))
 
 (defn dispatch-to-callback [callback data]
+  (println "CALLBACK::" callback)
   (cond (instance? MMC callback)
         (>!! callback data)
         (instance? IFn callback)
         (callback data)
-        :else (throw (Exception. (str "Callback of type " (type callback) " not supported")))))
+        :else (throw (Exception. (str "Callback of type " (str (class callback)) " not supported")))))
 
 (defn start-tcp-responce-async-loop [client]
   (thread (loop []
@@ -44,7 +45,7 @@
               stream-in-ch (:in @client)]
           (if-not (nil? stream-in-ch)
             (let [responce (<!! stream-in-ch)
-                  _ (println "got responce" responce)
+                  ;_ (println "got responce" responce)
                   responce (clojure.walk/keywordize-keys (cheshire/decode (String. (byte-array responce))))
                   request-uuid (keyword (get responce :request-uuid))
                   callback (get @pending-requests request-uuid)]
@@ -69,7 +70,7 @@
           (if send-result
             ;schedule a "take" from the socket
             (do
-              (println "scheduling a take...")
+              ;(println "scheduling a take...")
               (>!! @tcp-responce-ch callback))
             (dispatch-to-callback callback {:error ":out socket channel closed, no data sent"}))
           (recur)))))
