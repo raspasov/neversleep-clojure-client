@@ -39,11 +39,12 @@
         :else (throw (Exception. (str "Callback of type " (type callback) " not supported")))))
 
 (defn start-tcp-responce-async-loop [client]
-  (go (loop []
-        (let [callback (<! @tcp-responce-ch)
+  (thread (loop []
+        (let [callback (<!! @tcp-responce-ch)
               stream-in-ch (:in @client)]
           (if-not (nil? stream-in-ch)
-            (let [responce (<! stream-in-ch)
+            (let [responce (<!! stream-in-ch)
+                  _ (println "got responce" responce)
                   responce (clojure.walk/keywordize-keys (cheshire/decode (String. (byte-array responce))))
                   request-uuid (keyword (get responce :request-uuid))
                   callback (get @pending-requests request-uuid)]
@@ -56,18 +57,20 @@
 (def tcp-request-ch (atom (chan 1000)))
 
 (defn start-tcp-request-async-loop [client]
-  (go (loop []
-        (let [{:keys [callback b-a request-uuid]} (<! @tcp-request-ch)
+  (thread (loop []
+        (let [{:keys [callback b-a request-uuid]} (<!! @tcp-request-ch)
               request-uuid (keyword request-uuid)
               stream-out-ch (:out @client)
               send-result (if stream-out-ch
-                            (>! stream-out-ch b-a)
+                            (>!! stream-out-ch b-a)
                             false)]
           ;add to pending-requests
           (swap! pending-requests assoc request-uuid callback)
           (if send-result
             ;schedule a "take" from the socket
-            (>! @tcp-responce-ch callback)
+            (do
+              (println "scheduling a take...")
+              (>!! @tcp-responce-ch callback))
             (dispatch-to-callback callback {:error ":out socket channel closed, no data sent"}))
           (recur)))))
 
@@ -75,6 +78,7 @@
 (defn init
   "Initiates a tcp socket connection to the server"
   [host port]
+  (reset! pending-requests {})
   (reset! tcp-request-ch (chan 1000))
   (reset! tcp-responce-ch (chan 1000))
   (reset! client (connect-stream-to-core-async-channels
@@ -138,8 +142,8 @@
 
 (defn- io-get-entity-as-of-base [^String entity-id timestamp]
   (let [{:keys [header-bytes request-uuid]} (header-bytes -127)
-        entity-id-length (byte-array [(count entity-id)])
         entity-id-bytes (.getBytes entity-id)
+        entity-id-length (byte-array [(count entity-id-bytes)])
         timestamp (.getBytes (str timestamp))]
     {:b-a (byte-array (concat header-bytes entity-id-length entity-id-bytes timestamp))
      :request-uuid request-uuid}))
@@ -168,6 +172,9 @@
    (let [{:keys [b-a request-uuid]} (io-assoc-base entity-id key value)]
      (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
 
+(defn io-hash-map [entity-id a-map]
+  (doseq [[k v] a-map]
+    (io-assoc entity-id k v (fn [x] (println "confirmed write " k v x)))))
 
 (defn io-dissoc
   ([^String entity-id key]
