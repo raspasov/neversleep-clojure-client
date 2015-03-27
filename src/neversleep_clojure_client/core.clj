@@ -32,7 +32,7 @@
 (def tcp-responce-ch (atom (chan 1000)))
 
 (defn dispatch-to-callback [callback data]
-  (println "CALLBACK::" callback)
+  ;(println "CALLBACK::" callback)
   (cond (instance? MMC callback)
         (>!! callback data)
         (instance? IFn callback)
