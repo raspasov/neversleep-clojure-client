@@ -31,6 +31,24 @@ Write to an entity "user-1" while preserving all past history:
 (io-get-all-versions-between "user-1" latest-server-timestamp end-of-times 25)
 => {:result [["1427531776863000000" {:currency-balance 200}] 
              ["1427531747415000000" {:currency-balance 100}]]}
+
+;"delete" from an entity
+(io-dissoc "user-1" :currency-balance)
+=> {:result {:timestamp "1427533314969000000"}}
+
+;get the current state of the entity
+(io-get-entity "user-1")
+=> {:result {}} ;entity is empty
+
+;of course, reading "user-1" at a previous timestamp is intact
+(io-get-entity-as-of "user-1" "1427531776863000000")
+=> {:result {:currency-balance 200}}
+
+;we can see that the history has grown by one item
+=> {:result [["1427533314969000000" {}] 
+            ["1427531776863000000" {:currency-balance 200}] 
+            ["1427531747415000000" {:currency-balance 100}]]}
+
 ```
 
 
