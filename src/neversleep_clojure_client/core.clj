@@ -33,11 +33,12 @@
 
 (defn dispatch-to-callback [callback data]
   ;(println "CALLBACK::" callback)
-  (cond (instance? MMC callback)
-        (>!! callback data)
-        (instance? IFn callback)
-        (callback data)
-        :else (throw (Exception. (str "Callback of type " (str (class callback)) " not supported")))))
+  (let [data (dissoc data :request-uuid)]
+    (cond (instance? MMC callback)
+          (>!! callback data)
+          (instance? IFn callback)
+          (callback data)
+          :else (throw (Exception. (str "Callback of type " (str (class callback)) " not supported"))))))
 
 (defn start-tcp-responce-async-loop [client]
   (thread (loop []
@@ -160,18 +161,23 @@
      :request-uuid request-uuid}))
 
 
+(defn io-template [^IFn io-fn callback]
+  (let [{:keys [b-a request-uuid]} (io-fn)]
+    (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})))
+
+(defn io-template-sync [^IFn io-fn]
+  (let [callback (chan 1)]
+    (io-template io-fn callback)
+    (<!! callback)))
 
 ;PUBLIC API
 
+;writes
 (defn io-assoc
   ([^String entity-id key value]
-   (let [callback (chan 1)
-         {:keys [b-a request-uuid]} (io-assoc-base entity-id key value)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
-     (<!! callback)))
+   (io-template-sync #(io-assoc-base entity-id key value)))
   ([^String entity-id key value callback]
-   (let [{:keys [b-a request-uuid]} (io-assoc-base entity-id key value)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+   (io-template #(io-assoc-base entity-id key value) callback)))
 
 (defn io-hash-map [entity-id a-map]
   (doseq [[k v] a-map]
@@ -179,47 +185,28 @@
 
 (defn io-dissoc
   ([^String entity-id key]
-   (let [callback (chan 1)
-         {:keys [b-a request-uuid]} (io-dissoc-base entity-id key)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
-     (<!! callback)))
+   (io-template-sync #(io-dissoc-base entity-id key)))
   ([^String entity-id key callback]
-   (let [{:keys [b-a request-uuid]} (io-dissoc-base entity-id key)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+   (io-template #(io-dissoc-base entity-id key) callback)))
 
+;reads
 (defn io-get-key-as-of
   ([^String entity-id key timestamp]
-   (let [callback (chan 1)
-         {:keys [b-a request-uuid]} (io-get-key-as-of-base entity-id key timestamp)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
-     (<!! callback)))
+   (io-template-sync #(io-get-key-as-of-base entity-id key timestamp)))
   ([^String entity-id key timestamp callback]
-   (let [{:keys [b-a request-uuid]} (io-get-key-as-of-base entity-id key timestamp)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+   (io-template #(io-get-key-as-of-base entity-id key timestamp) callback)))
 
 (defn io-get-entity-as-of
   ([^String entity-id timestamp]
-   (let [callback (chan 1)
-         {:keys [b-a request-uuid]} (io-get-entity-as-of-base entity-id timestamp)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback})
-     (<!! callback)))
+   (io-template-sync #(io-get-entity-as-of-base entity-id timestamp)))
   ([^String entity-id timestamp callback]
-   (let [{:keys [b-a request-uuid]} (io-get-entity-as-of-base entity-id timestamp)]
-     (>!! @tcp-request-ch {:b-a b-a :request-uuid request-uuid :callback callback}))))
+   (io-template #(io-get-entity-as-of-base entity-id timestamp) callback)))
 
 (defn io-get-all-versions-between
   ([^String entity-id timestamp-start timestamp-end limit]
-   (let [callback (chan 1)
-         {:keys [b-a request-uuid]} (io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)]
-     (>!! @tcp-request-ch {:b-a      b-a
-                          :request-uuid request-uuid
-                          :callback callback})
-     (<!! callback)))
+   (io-template-sync #(io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)))
   ([^String entity-id timestamp-start timestamp-end limit callback]
-   (let [{:keys [b-a request-uuid]} (io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit)]
-     (>!! @tcp-request-ch {:b-a      b-a
-                          :request-uuid request-uuid
-                          :callback callback}))))
+   (io-template #(io-get-all-versions-between-base entity-id timestamp-start timestamp-end limit) callback)))
 
 (defn io-get-entity
   ([entity-id]

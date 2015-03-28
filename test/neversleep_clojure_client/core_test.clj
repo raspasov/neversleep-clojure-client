@@ -8,7 +8,9 @@
 
 
 (defn init-tcp-connection []
-  (init "localhost" 10000))
+  ;(init "localhost" 10000)
+  (init "ec2-52-11-233-130.us-west-2.compute.amazonaws.com" 10000)
+  )
 
 (deftest io-assoc-test-1
   (init-tcp-connection)
