@@ -29,7 +29,8 @@ Write to an entity "user-1" while preserving all past history:
 ;the last parameter is the maximum number of versions returned (limit)
 ;this lookup is currently implemented in linear time, so the limit should be kept low
 (io-get-all-versions-between "user-1" latest-server-timestamp end-of-times 25)
-=> {:result [["1427531776863000000" {:currency-balance 200}] ["1427531747415000000" {:currency-balance 100}]]}
+=> {:result [["1427531776863000000" {:currency-balance 200}] 
+             ["1427531747415000000" {:currency-balance 100}]]}
 ```
 
 
