@@ -24,6 +24,12 @@ Write to an entity "user-1" while preserving all past history:
 ;read "user-1" as of t-2
 (io-get-entity-as-of "user-1" "1427531776863000000")
 {:result {:currency-balance 200}}
+
+;get all versions of an entity 
+;the last parameter is the maximum number of versions returned (limit)
+;this lookup is currently implemented in linear time, so the limit should be kept low
+(io-get-all-versions-between "user-1" latest-server-timestamp end-of-times 25)
+=> {:result [["1427531776863000000" {:currency-balance 200}] ["1427531747415000000" {:currency-balance 100}]]}
 ```
 
 
