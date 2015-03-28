@@ -9,6 +9,9 @@ Follow instructions at [https://github.com/raspasov/neversleep](https://github.c
 ## Usage
 Write to an entity "user-1" while preserving all past history:
 ```clojure
+;connect to server
+(init "localhost" 10000)
+
 ;first write
 (io-assoc "user-1" :currency-balance 100)
 => {:result {:timestamp "1427531747415000000"}} ;t-1
