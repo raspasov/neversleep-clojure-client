@@ -7,7 +7,7 @@ NeverSleep is an immutable data structure server, written in Clojure
 Follow instructions at [https://github.com/raspasov/neversleep](https://github.com/raspasov/neversleep)
 
 ## Dependencies
-Add the necessary dependency to your [http://leiningen.org/](Leiningen) project.clj and require the library in your ns:
+Add the necessary dependency to your [Leiningen](http://leiningen.org/) project.clj and require the library in your ns:
 ```clojure
 [com.raspasov/neversleep-clojure-client "1.0.0-alpha3"] ;project.clj
 (ns my-app.core 
