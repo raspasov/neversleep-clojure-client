@@ -94,7 +94,7 @@
 (def callback-count (atom 0))
 
 (defn callback-test [responce-data]
-  (println "callback-test responce-data:" responce-data)
+  ;(println "callback-test responce-data:" responce-data)
   (swap! callback-count + 1))
 
 

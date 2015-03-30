@@ -1,8 +1,7 @@
-(defproject neversleep-clojure-client "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+(defproject neversleep-clojure-client "1.0.0-alpha1"
+  :description "Immutable data structure server, in Clojure (client)"
+  :url "https://github.com/raspasov/neversleep-clojure-client"
+  :license {:name "MIT License"}
   :java-source-paths ["src/jv"]
   :dependencies [[org.clojure/clojure "1.7.0-alpha5"]
                  [aleph "0.4.0-beta3"]
