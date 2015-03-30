@@ -9,7 +9,7 @@ Follow instructions at [https://github.com/raspasov/neversleep](https://github.c
 ## Dependencies
 Add the necessary dependency to your [Leiningen](http://leiningen.org/) project.clj and require the library in your ns:
 ```clojure
-[com.raspasov/neversleep-clojure-client "1.0.0-alpha3"] ;project.clj
+[com.raspasov/neversleep-clojure-client "1.0.0-alpha4"] ;project.clj
 (ns my-app.core 
    (:require [neversleep-clojure-client.core :as nvrslp :refer :all]))
 ```
