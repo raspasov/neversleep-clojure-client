@@ -1,4 +1,4 @@
-(defproject neversleep-clojure-client "1.0.0-alpha1"
+(defproject com.raspasov/neversleep-clojure-client "1.0.0-alpha1"
   :description "Immutable data structure server, in Clojure (client)"
   :url "https://github.com/raspasov/neversleep-clojure-client"
   :license {:name "MIT License"}
