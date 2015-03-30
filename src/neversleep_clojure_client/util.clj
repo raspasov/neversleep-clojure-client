@@ -4,17 +4,11 @@
            (java.util UUID)))
 
 
-(def byte-array-class (class (byte-array 0)))
-
 ;blob partitioning
 (defn int-to-four-bytes [i]
   (-> (ByteBuffer/allocate 4)
       (.putInt (int i))
       (.array)))
-
-(defn four-bytes-to-int [^bytes b-a]
-  (-> (ByteBuffer/wrap b-a)
-      (.getInt)))
 
 (defn uuid [] (UUID/randomUUID))
 
@@ -44,17 +38,3 @@
   (if blob
     (nippy/thaw blob {:skip-header? true :compressor nil :encryptor nil})
     nil))
-
-(defn seq-to-map
-  "Transform from a sequence to a map; if a-seq contains odd number of items last one will be ignored"
-  [a-seq]
-  (let [pair (volatile! [])]
-    (persistent! (reduce (fn
-                           ([result] result)
-                           ([result item]
-                            (let [-pair (vswap! pair conj item)]
-                              (if (= 2 (count -pair))
-                                (do
-                                  (vreset! pair [])
-                                  (assoc! result (keyword (str (nth -pair 0))) (nth -pair 1)))
-                                result)))) (transient {}) a-seq))))
