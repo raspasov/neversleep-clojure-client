@@ -6,11 +6,19 @@ NeverSleep is an immutable data structure server, written in Clojure
 
 Follow instructions at [https://github.com/raspasov/neversleep](https://github.com/raspasov/neversleep)
 
+## Dependencies
+Add the necessary dependency to your [http://leiningen.org/](Leiningen) project.clj and require the library in your ns:
+```clojure
+[com.raspasov/neversleep-clojure-client "1.0.0-alpha3"] ;project.clj
+(ns my-app.core 
+   (:require [neversleep-clojure-client.core :as nvrslp :refer [io-assoc io-dissoc io-get-entity io-get-entity-as-of]]))
+```
+
 ## Usage
 Write to an entity "user-1" while preserving all past history:
 ```clojure
 ;connect to server
-(init "localhost" 10000)
+(nvrslp/init "localhost" 10000)
 
 ;first write
 (io-assoc "user-1" :currency-balance 100)
