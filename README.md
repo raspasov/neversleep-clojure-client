@@ -11,7 +11,7 @@ Add the necessary dependency to your [http://leiningen.org/](Leiningen) project.
 ```clojure
 [com.raspasov/neversleep-clojure-client "1.0.0-alpha3"] ;project.clj
 (ns my-app.core 
-   (:require [neversleep-clojure-client.core :as nvrslp :refer [io-assoc io-dissoc io-get-entity io-get-entity-as-of]]))
+   (:require [neversleep-clojure-client.core :as nvrslp :refer :all]))
 ```
 
 ## Usage
