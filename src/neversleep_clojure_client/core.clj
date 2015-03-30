@@ -47,7 +47,7 @@
           (if-not (nil? stream-in-ch)
             (let [responce (<!! stream-in-ch)
                   ;_ (println "got responce" responce)
-                  responce (clojure.walk/keywordize-keys (cheshire/decode (String. (byte-array responce))))
+                  responce (util/de-serialize (byte-array responce))
                   request-uuid (keyword (get responce :request-uuid))
                   callback (get @pending-requests request-uuid)]
               ;gc atom
@@ -101,12 +101,13 @@
 (defn- header-bytes
   "Bytes common to all requests"
   [command]
-  (let [api-version (byte-array [api-version])
+  (let [language (byte-array [0])
+        api-version (byte-array [api-version])
         command (byte-array [command])
         verbose-mode (byte-array [0])
         uuid (util/uuid)
         request-uuid (util/uuid-to-bytes uuid)]
-    {:header-bytes (byte-array (concat api-version command verbose-mode request-uuid))
+    {:header-bytes (byte-array (concat language api-version command verbose-mode request-uuid))
      :request-uuid (str uuid)}))
 
 
