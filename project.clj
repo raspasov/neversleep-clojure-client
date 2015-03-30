@@ -22,6 +22,6 @@
                        "-Xms512m"
                        "-Xmx512m"
                        ;"-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
-                       "-agentpath:/Users/raspasov/Downloads/YourKit_Java_Profiler_2015_EAP_build_15038.app/Contents/Resources/bin/mac/libyjpagent.jnilib"
+                       ;"-agentpath:/Users/raspasov/Downloads/YourKit_Java_Profiler_2015_EAP_build_15038.app/Contents/Resources/bin/mac/libyjpagent.jnilib"
                        ]
   :profiles {:uberjar {:aot :all}})
