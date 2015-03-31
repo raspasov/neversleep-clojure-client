@@ -10,8 +10,7 @@
                            [environ "1.0.0"]
                            [org.clojure/core.incubator "0.1.3"]
                            [criterium "0.4.3"]
-                           [gloss "0.2.4"]
-                           [cheshire "5.4.0"]]
+                           [gloss "0.2.4"]]
             ;:global-vars {*warn-on-reflection* true *unchecked-math* :warn-on-boxed}
             :javac-options ["-target" "1.6" "-source" "1.6"]
             :plugins [[lein-environ "1.0.0"]]

@@ -3,7 +3,6 @@
             [clojure.core.async :refer [<!! >!! go <! >! alts! chan thread timeout pipe close!]]
             [clojure.core.async.impl.protocols :refer [closed?]]
             [manifold.stream :as s]
-            [cheshire.core :as cheshire]
             [neversleep-clojure-client.time :as time]
             [neversleep-clojure-client.util :as util])
   (:import (jv SystemClock)
