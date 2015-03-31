@@ -53,9 +53,10 @@ Write to an entity "user-1" while preserving all past history:
 => {:result {:currency-balance 200}}
 
 ;we can see that the history has grown by one item
+(io-get-all-versions-between "user-1" latest-server-timestamp end-of-times 25)
 => {:result [["1427533314969000000" {}] 
-            ["1427531776863000000" {:currency-balance 200}] 
-            ["1427531747415000000" {:currency-balance 100}]]}
+             ["1427531776863000000" {:currency-balance 200}]
+             ["1427531747415000000" {:currency-balance 100}]]}
 
 ```
 
